@@ -3,7 +3,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 import morgan from 'morgan';
 import mongoose from 'mongoose';
-
+import routes from './routes/index.js';
 
 dotenv.config();
 
@@ -32,6 +32,7 @@ app.get('/', (req, res) => {
     });
 });
 
+app.use('/api-v1', routes);
 
 // error handling middleware
 app.use((err, req, res, next) => {
