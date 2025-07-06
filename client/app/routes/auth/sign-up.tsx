@@ -8,8 +8,11 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router';
+import { useSignUpMutation } from '@/hooks/use-auth';
+import { toast } from 'sonner';
 
-type signUpFormData = z.infer<typeof signUpSchema>;
+export type signUpFormData = z.infer<typeof signUpSchema>;
+
 const SignUp = () => {
   const form = useForm<signUpFormData>({
     resolver: zodResolver(signUpSchema),
@@ -21,8 +24,19 @@ const SignUp = () => {
     },
   });
 
+  const {mutate, isPending} = useSignUpMutation();
+
   const handleOnSubmit = (values: signUpFormData) => {
-    console.log('Form submitted:', values);
+    mutate(values,{
+      onSuccess: () => {
+        toast.success('Account created successfully!');
+      },
+      onError: (error: any) => {
+        const errorMessage = error.response?.data?.message || 'An error occurred while creating your account.';
+        console.log(error);
+        toast.error(errorMessage);
+      },
+    });
   };
 
   return (
@@ -91,8 +105,8 @@ const SignUp = () => {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className='w-full'>
-                Create Account
+              <Button type="submit" className='w-full' disabled={isPending}>
+                {isPending ? 'Signing Up...' : 'Sign Up'}
               </Button>
             </form>
           </Form>
