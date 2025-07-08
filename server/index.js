@@ -28,7 +28,7 @@ mongoose.connect(process.env.MONGODB_URI).then(() => {
 
 app.get('/', (req, res) => {
     res.status(200).json({
-        message: 'Welcome to the TaskHub API',
+        message: 'Welcome to the DockIt API',
     });
 });
 
