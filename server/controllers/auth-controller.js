@@ -1,23 +1,31 @@
-import bcrypt from 'bcrypt';
 import User from '../models/user.js';
+import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import Verification from '../models/verification.js';
 import sendEmail from '../libs/send-email.js';
-import aj from '../libs/arcjet.js';
+import validator from 'deep-email-validator'
 
 
 const registerUser = async (req, res) => {
     try {
         const { name, email, password } = req.body;
 
-        const decision = await aj.protect(req, { email });
-        console.log("Arcjet decision", decision);
+        //diff here
+        const emailValidation = await validator.default({
+            email,
+            validateRegex: true,
+            validateMx: true,
+            validateTypo: false,
+            validateDisposable: true,
+            validateSMTP: true,
+        });
+        console.log('isEmailValid :',emailValidation.valid);
 
-        if (decision.isDenied()) {
-            if (decision.reason.isRateLimit()) {
-                res.writeHead(403, { "Content-Type": "application/json" });
-                res.end(JSON.stringify({ error: "Invalid email" }));
-            }
+        if (!emailValidation.valid) {
+            res.writeHead(403, {
+                'Content-Type': 'application/json',
+            });
+            res.end(JSON.stringify({message: 'Invalid email address'}));
         }
 
         const existingUser = await User.findOne({ email });
@@ -57,20 +65,20 @@ const registerUser = async (req, res) => {
         `;
         const emailSubject = 'Email Verification';
 
-        const isEmailSent = await sendEmail(
-            newUser.email,
-            emailSubject,
-            emailBody
-        );
+        // const isEmailSent = await sendEmail(
+        //     email,
+        //     emailSubject,
+        //     emailBody
+        // );
 
-        if (!isEmailSent) {
-            return res.status(500).json({
-                message: 'Failed to send verification email. Please try again later.',
-            });
-        }
+        // if (!isEmailSent) {
+        //     return res.status(500).json({
+        //         message: 'Failed to send verification email. Please try again later.',
+        //     });
+        // }
         
         res.status(201).json({
-            message: 'Verification email sent to your email address. Please verify your account.',
+            message: 'Verification email sent. Please verify your account.',
         });
     } catch (error) {
         console.log(error);

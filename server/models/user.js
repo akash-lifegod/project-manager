@@ -1,3 +1,4 @@
+import validate from 'deep-email-validator';
 import mongoose from 'mongoose';
 
 const userSchema = new mongoose.Schema(
@@ -7,7 +8,8 @@ const userSchema = new mongoose.Schema(
             required : true,
             unique : true,
             trim : true,
-            lowercase : true
+            lowercase : true,
+            
         },
         password : {
             type : String,
