@@ -45,7 +45,7 @@ const registerUser = async (req, res) => {
 
         // TODO: Send verification email
         const verificationToken = jwt.sign(
-            { userId: newUser._id, property: 'email-verification' },
+            { userId: newUser._id, purpose: 'email-verification' },
             process.env.JWT_SECRET,
             { expiresIn: '1h' }
         );
@@ -65,17 +65,17 @@ const registerUser = async (req, res) => {
         `;
         const emailSubject = 'Email Verification';
 
-        // const isEmailSent = await sendEmail(
-        //     email,
-        //     emailSubject,
-        //     emailBody
-        // );
+        const isEmailSent = await sendEmail(
+            email,
+            emailSubject,
+            emailBody
+        );
 
-        // if (!isEmailSent) {
-        //     return res.status(500).json({
-        //         message: 'Failed to send verification email. Please try again later.',
-        //     });
-        // }
+        if (!isEmailSent) {
+            return res.status(500).json({
+                message: 'Failed to send verification email. Please try again later.',
+            });
+        }
         
         res.status(201).json({
             message: 'Verification email sent. Please verify your account.',
@@ -87,6 +87,7 @@ const registerUser = async (req, res) => {
         });
     }
 };
+
 const loginUser = async (req, res) => {
     try {
         
@@ -98,4 +99,74 @@ const loginUser = async (req, res) => {
     }
 };
 
-export { registerUser, loginUser };
+const verifyEmail = async (req, res) => {
+    try {
+        const {token} = req.body;
+
+        const payload = jwt.verify(token, process.env.JWT_SECRET);
+
+        if(!payload){
+            return res.status(401).json({
+                message: 'Unauthorized',
+            });
+        }
+
+        const {userId, purpose} = payload;
+
+        if(purpose !== 'email-verification') {
+            return res.status(401).json({
+                message: 'Unauthorized',
+            });
+        }
+
+        const verification = await Verification.findOne({
+            userId,
+            token,
+        });
+
+        if (!verification) {
+            return res.status(401).json({
+                message: 'Unauthorized',
+            });
+        }
+
+        const isTokenExpired = verification.expiresAt < new Date();
+
+        if (isTokenExpired) {
+            return res.status(401).json({
+                message: 'Verification token has expired.',
+            });
+        }
+
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.status(404).json({
+                message: 'User not found',
+            });
+        }
+
+        if (user.isEmailVerified) {
+            return res.status(400).json({
+                message: 'Email is already verified',
+            });
+        }
+
+        user.isEmailVerified = true;
+        await user.save();
+
+        await Verification.findByIdAndDelete(verification._id);
+
+        res.status(200).json({
+            message: 'Email verified successfully',
+        });
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: 'Internal Server Error',
+        });
+    }
+};
+
+export { registerUser, loginUser, verifyEmail };
