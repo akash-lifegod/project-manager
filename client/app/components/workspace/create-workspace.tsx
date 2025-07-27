@@ -9,6 +9,9 @@ import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
+import { useCreateWorkspace } from '@/hooks/use-workspace';
+import { toast } from 'sonner';
+import { useNavigate } from 'react-router';
 
 interface CreateWorkSpaceProps {
     isCreatingWorkspace: boolean;
@@ -26,7 +29,7 @@ export const colorOptions = [
   "#34495E", // Navy
 ];
 
-type WorkspaceForm = z.infer<typeof workspaceSchema>
+export type WorkspaceForm = z.infer<typeof workspaceSchema>
 
 export const CreateWorkSpace = ({
     isCreatingWorkspace,
@@ -42,9 +45,23 @@ export const CreateWorkSpace = ({
         },
     });
 
+    const navigate = useNavigate();
+    const {mutate, isPending} = useCreateWorkspace();
+
     const onSubmit = (data: WorkspaceForm) => {
-        console.log("Workspace Created", data);
-        // setIsCreatingWorkspace(false);
+        mutate(data, {
+            onSuccess: (data: any) => {
+                form.reset();
+                setIsCreatingWorkspace(false);
+                toast.success("Workspace created successfully!");
+                navigate(`/workspaces/${data._id}`);
+            },
+            onError: (error: any) => {
+                const errorMessage = error?.response?.data?.message;
+                toast.error(errorMessage);
+                console.error(error);
+            }
+        });
     };
 
   return (

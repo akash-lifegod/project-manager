@@ -4,7 +4,7 @@ import { Button } from "../ui/button";
 import { Bell, PlusCircle } from "lucide-react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuItem, DropdownMenuGroup } from "../ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { Link } from "react-router";
+import { Link, useLoaderData } from "react-router";
 import { WorkspaceAvatar } from "../workspace/workspace-avatar";
 
 interface HeaderProps {
@@ -21,7 +21,7 @@ export const Header = ({
 }: HeaderProps) => {
     
     const {user, logout} = useAuth();
-    const workspaces = [];
+    const {workspaces} = useLoaderData() as { workspaces: Workspace[] };
 
   return (
     <div className="bg-background sticky top-0 z-40 border-b">
